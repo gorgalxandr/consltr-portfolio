@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ExternalLink, Calendar, Tag } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
 
 interface PortfolioItem {
   id: number

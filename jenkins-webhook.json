@@ -1,0 +1,7 @@
+{
+  "name": "consltr-portfolio",
+  "url": "https://github.com/gorgalxandr/consltr-portfolio",
+  "events": ["push", "pull_request"],
+  "jenkins_url": "https://jenkins.consltr.com",
+  "jenkins_job": "consltr-portfolio"
+}

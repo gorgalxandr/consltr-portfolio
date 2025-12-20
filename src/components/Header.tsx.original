@@ -1,0 +1,30 @@
+// src/components/Header.js
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+function Header() {
+  const { user, logout } = useAuth();
+
+  return (
+    <header style={{ padding: '10px', borderBottom: '1px solid #ccc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <nav>
+        <Link to="/" style={{ marginRight: '15px' }}>Home</Link>
+        <Link to="/about" style={{ marginRight: '15px' }}>About</Link>
+        <Link to="/products">Products</Link>
+        {user && <Link to="/agents" style={{ marginLeft: '15px' }}>Dashboard</Link>}
+      </nav>
+      <div>
+        {user ? (
+          <>
+            <span>Hello, {user.name}!</span>
+            <button onClick={logout} style={{ marginLeft: '10px' }}>Logout</button>
+          </>
+        ) : (
+          <Link to="/login">Login</Link>
+        )}
+      </div>
+    </header>
+  );
+}
+
+export default Header;

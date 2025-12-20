@@ -1,0 +1,159 @@
+// contexts/AuthContext.tsx
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { AuthContextType, AuthState, User } from '../types/auth';
+import api from '../utils/api'; // Import your configured axios instance
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const [authState, setAuthState] = useState<AuthState>({
+    user: null,
+    isAuthenticated: false,
+    isLoading: true,
+  });
+
+  const login = async (email: string, password: string): Promise<void> => {
+    try {
+      // Use the api instance instead of fetch
+      const response = await api.post('/api/login', { email, password });
+      
+      if (response.data.success) {
+        await checkAuth();
+        if (response.data.redirect) {
+          window.location.href = response.data.redirect;
+        }
+      } else {
+        throw new Error(response.data.message);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
+  };
+
+  const register = async (email: string, password: string): Promise<void> => {
+    try {
+      const response = await api.post('/api/register', { email, password });
+      
+      if (response.data.success) {
+        await checkAuth();
+        if (response.data.redirect) {
+          window.location.href = response.data.redirect;
+        }
+      } else {
+        throw new Error(response.data.message);
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
+    }
+  };
+
+  const logout = async (): Promise<void> => {
+    try {
+      await api.post('/api/logout');
+      setAuthState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+      });
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Logout error:', error);
+      setAuthState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+      });
+    }
+  };
+
+  // Update checkAuth to use api instance
+  const checkAuth = async (): Promise<void> => {
+    try {
+      const response = await api.get('/api/profile');
+      if (response.data.success && response.data.user) {
+        setAuthState({
+          user: response.data.user,
+          isAuthenticated: true,
+          isLoading: false,
+        });
+      } else {
+        setAuthState({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+        });
+      }
+    } catch (error) {
+      setAuthState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+      });
+    }
+  };
+
+  const updateProfile = async (data: Partial<User>): Promise<{ success: boolean; message?: string }> => {
+  try {
+    const response = await api.put('/api/profile', data);
+
+    if (response.data.success && response.data.user) {
+      setAuthState(prev => ({
+        ...prev,
+        user: response.data.user,
+      }));
+      return {
+        success: true,
+        message: response.data.message || 'Profile updated successfully'
+      };
+    } else {
+      return {
+        success: false,
+        message: response.data.message || 'Profile update failed'
+      };
+    }
+  } catch (error: any) {
+    console.error('Profile update error:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || 
+              error.message || 
+              'An unexpected error occurred'
+    };
+  }
+};
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const value: AuthContextType = {
+    user: authState.user,
+    isAuthenticated: authState.isAuthenticated,
+    isLoading: authState.isLoading,
+    login,
+    register,
+    logout,
+    updateProfile,
+    checkAuth,
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

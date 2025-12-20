@@ -1,8 +1,29 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowDown, Sparkles } from 'lucide-react'
 
+interface FloatingElement {
+  id: number;
+  initialX: number;
+  initialY: number;
+  duration: number;
+  delay: number;
+}
+
 const Hero = () => {
+  const [floatingElements, setFloatingElements] = useState<FloatingElement[]>([])
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFloatingElements([...Array(6)].map((_, i) => ({
+      id: i,
+      initialX: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1000),
+      initialY: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 1000),
+      duration: Math.random() * 10 + 10,
+      delay: Math.random() * 5
+    })))
+  }, [])
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Grid */}
@@ -123,12 +144,12 @@ const Hero = () => {
 
       {/* Floating Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(6)].map((_, i) => (
+        {floatingElements.map((el) => (
           <motion.div
-            key={i}
+            key={el.id}
             initial={{ 
-              x: Math.random() * window.innerWidth, 
-              y: Math.random() * window.innerHeight,
+              x: el.initialX, 
+              y: el.initialY,
               scale: 0 
             }}
             animate={{ 
@@ -136,9 +157,9 @@ const Hero = () => {
               rotate: 360
             }}
             transition={{
-              duration: Math.random() * 10 + 10,
+              duration: el.duration,
               repeat: Infinity,
-              delay: Math.random() * 5
+              delay: el.delay
             }}
             className="absolute w-2 h-2 bg-purple-400/30 rounded-full"
           />

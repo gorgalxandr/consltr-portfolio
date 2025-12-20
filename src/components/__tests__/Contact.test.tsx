@@ -1,6 +1,7 @@
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { describe, test, expect, vi, beforeEach, afterEach, Mock } from 'vitest'
 import Contact from '../Contact'
 
 // Mock fetch globally
@@ -9,15 +10,18 @@ global.fetch = vi.fn()
 // Mock framer-motion to avoid animation issues in tests
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }: any) => {
+    div: ({ children, ...props }: React.ComponentProps<'div'> & { initial?: unknown; whileInView?: unknown; transition?: unknown }) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { initial, whileInView, transition, ...rest } = props;
       return <div {...rest}>{children}</div>;
     },
-    button: ({ children, ...props }: any) => {
+    button: ({ children, ...props }: React.ComponentProps<'button'> & { whileHover?: unknown; whileTap?: unknown }) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { whileHover, whileTap, ...rest } = props;
       return <button {...rest}>{children}</button>;
     },
-    a: ({ children, ...props }: any) => {
+    a: ({ children, ...props }: React.ComponentProps<'a'> & { initial?: unknown; whileInView?: unknown; whileHover?: unknown; transition?: unknown }) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { initial, whileInView, whileHover, transition, ...rest } = props;
       return <a {...rest}>{children}</a>;
     },
@@ -28,7 +32,7 @@ describe('Contact Component', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     // Reset fetch mock
-    ;(fetch as any).mockClear()
+    ;(fetch as Mock).mockClear()
   })
 
   afterEach(() => {
@@ -69,7 +73,7 @@ describe('Contact Component', () => {
   test('submits form with valid data successfully', async () => {
     const user = userEvent.setup()
     const mockResponse = { ok: true, json: () => Promise.resolve({ message: 'Success' }) }
-    ;(fetch as any).mockResolvedValueOnce(mockResponse)
+    ;(fetch as Mock).mockResolvedValueOnce(mockResponse)
     
     render(<Contact />)
     
@@ -115,7 +119,7 @@ describe('Contact Component', () => {
 
   test('handles network error gracefully', async () => {
     const user = userEvent.setup()
-    ;(fetch as any).mockRejectedValueOnce(new Error('Network error'))
+    ;(fetch as Mock).mockRejectedValueOnce(new Error('Network error'))
     
     render(<Contact />)
     
@@ -139,7 +143,7 @@ describe('Contact Component', () => {
       ok: false, 
       json: () => Promise.resolve({ message: 'Server error' })
     }
-    ;(fetch as any).mockResolvedValueOnce(mockResponse)
+    ;(fetch as Mock).mockResolvedValueOnce(mockResponse)
     
     render(<Contact />)
     
@@ -177,7 +181,7 @@ describe('Contact Component', () => {
   test('clears form after successful submission', async () => {
     const user = userEvent.setup()
     const mockResponse = { ok: true, json: () => Promise.resolve({ message: 'Success' }) }
-    ;(fetch as any).mockResolvedValueOnce(mockResponse)
+    ;(fetch as Mock).mockResolvedValueOnce(mockResponse)
     
     render(<Contact />)
     

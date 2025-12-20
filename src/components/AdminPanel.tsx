@@ -2,15 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { 
   ArrowLeft, 
-  Database, 
   Users, 
   Building, 
   Globe, 
   DollarSign, 
   BarChart3,
-  Server,
   Activity,
-  Settings,
   ExternalLink,
   Bot,
   Mic,
@@ -22,125 +19,60 @@ interface AdminPanelProps {
   onBack: () => void
 }
 
+interface User {
+  id: string
+  firstName?: string
+  lastName?: string
+  email: string
+  role: string
+  isActive: boolean
+}
+
 const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
-  const [stats, setStats] = useState<any>(null)
-  const [users, setUsers] = useState<any[]>([])
+  const [stats, setStats] = useState<Record<string, unknown> | null>(null)
+  const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [voiceStatus, setVoiceStatus] = useState<'checking' | 'healthy' | 'error'>('checking')
   const [isPlayingVoice, setIsPlayingVoice] = useState<string | null>(null)
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch statistics
+        const statsResponse = await fetch('http://localhost:4000/api/v1/stats')
+        const statsData = await statsResponse.json()
+        setStats(statsData.statistics)
+  
+        // Fetch users
+        const usersResponse = await fetch('http://localhost:4000/api/v1/users')
+        const usersData = await usersResponse.json()
+        setUsers(usersData.users || [])
+  
+        setLoading(false)
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to fetch data:', error)
+        setLoading(false)
+      }
+    }
+  
+    const checkVoiceHealth = async () => {
+      try {
+        const response = await fetch('https://onzoe.com/api/voice/health')
+        const data = await response.json()
+        setVoiceStatus(data.integration === 'healthy' ? 'healthy' : 'error')
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Voice health check failed:', error)
+        setVoiceStatus('error')
+      }
+    }
+
     fetchData()
     checkVoiceHealth()
   }, [])
 
-  const fetchData = async () => {
-    try {
-      // Fetch statistics
-      const statsResponse = await fetch('http://localhost:4000/api/v1/stats')
-      const statsData = await statsResponse.json()
-      setStats(statsData.statistics)
-
-      // Fetch users
-      const usersResponse = await fetch('http://localhost:4000/api/v1/users')
-      const usersData = await usersResponse.json()
-      setUsers(usersData.users || [])
-
-      setLoading(false)
-    } catch (error) {
-      console.error('Failed to fetch data:', error)
-      setLoading(false)
-    }
-  }
-
-  const checkVoiceHealth = async () => {
-    try {
-      const response = await fetch('https://onzoe.com/api/voice/health')
-      const data = await response.json()
-      setVoiceStatus(data.integration === 'healthy' ? 'healthy' : 'error')
-    } catch (error) {
-      console.error('Voice health check failed:', error)
-      setVoiceStatus('error')
-    }
-  }
-
-  const testVoicePreview = async (text: string, voice: string) => {
-    try {
-      setIsPlayingVoice(voice)
-      
-      // Try OnZoe API first, fallback to browser TTS
-      try {
-        // Get CSRF token
-        const tokenResponse = await fetch('https://onzoe.com/api/csrf-token', {
-          credentials: 'include'
-        })
-        
-        if (tokenResponse.ok) {
-          const { csrfToken } = await tokenResponse.json()
-          console.log('🎤 OnZoe Voice API connected, CSRF token:', csrfToken.substring(0, 10) + '...')
-          
-          // Use OnZoe voice synthesis endpoint
-          const voiceResponse = await fetch('https://onzoe.com/api/voice/synthesize', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRF-Token': csrfToken
-            },
-            credentials: 'include',
-            body: JSON.stringify({
-              text: text,
-              voice: voice
-            })
-          })
-          
-          if (voiceResponse.ok) {
-            const audioBlob = await voiceResponse.blob()
-            const audioUrl = URL.createObjectURL(audioBlob)
-            const audio = new Audio(audioUrl)
-            
-            audio.onended = () => {
-              setIsPlayingVoice(null)
-              URL.revokeObjectURL(audioUrl)
-            }
-            
-            audio.onerror = () => {
-              console.log('⚠️ Audio playback failed, falling back to browser TTS')
-              setIsPlayingVoice(null)
-              // Fallback to browser TTS
-              const utterance = new SpeechSynthesisUtterance(text)
-              setupVoiceUtterance(utterance, voice, text)
-            }
-            
-            await audio.play()
-            console.log('🔊 Playing OnZoe AI voice:', voice)
-            return // Success - exit early
-          } else {
-            console.log('⚠️ OnZoe voice synthesis failed, using browser TTS fallback')
-          }
-        }
-      } catch (onzoeError) {
-        console.log('⚠️ OnZoe API not available, using browser TTS fallback')
-      }
-
-      // Use browser's Speech Synthesis API for immediate feedback
-      const utterance = new SpeechSynthesisUtterance(text)
-      
-      // Wait for voices to be loaded
-      if (speechSynthesis.getVoices().length === 0) {
-        speechSynthesis.addEventListener('voiceschanged', () => {
-          setupVoiceUtterance(utterance, voice, text)
-        }, { once: true })
-      } else {
-        setupVoiceUtterance(utterance, voice, text)
-      }
-      
-    } catch (error) {
-      console.error('Voice preview failed:', error)
-      setIsPlayingVoice(null)
-    }
-  }
-
-  const setupVoiceUtterance = (utterance: SpeechSynthesisUtterance, voice: string, text: string) => {
+  const setupVoiceUtterance = (utterance: SpeechSynthesisUtterance, voice: string) => {
     const voices = speechSynthesis.getVoices()
     
     // Try to find a voice that matches the requested voice
@@ -172,6 +104,88 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
     }
     
     speechSynthesis.speak(utterance)
+  }
+
+  const testVoicePreview = async (text: string, voice: string) => {
+    try {
+      setIsPlayingVoice(voice)
+      
+      // Try OnZoe API first, fallback to browser TTS
+      try {
+        // Get CSRF token
+        const tokenResponse = await fetch('https://onzoe.com/api/csrf-token', {
+          credentials: 'include'
+        })
+        
+        if (tokenResponse.ok) {
+          const { csrfToken } = await tokenResponse.json()
+          // eslint-disable-next-line no-console
+          console.log('🎤 OnZoe Voice API connected, CSRF token:', csrfToken.substring(0, 10) + '...')
+          
+          // Use OnZoe voice synthesis endpoint
+          const voiceResponse = await fetch('https://onzoe.com/api/voice/synthesize', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-Token': csrfToken
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              text: text,
+              voice: voice
+            })
+          })
+          
+          if (voiceResponse.ok) {
+            const audioBlob = await voiceResponse.blob()
+            const audioUrl = URL.createObjectURL(audioBlob)
+            const audio = new Audio(audioUrl)
+            
+            audio.onended = () => {
+              setIsPlayingVoice(null)
+              URL.revokeObjectURL(audioUrl)
+            }
+            
+            audio.onerror = () => {
+              // eslint-disable-next-line no-console
+              console.log('⚠️ Audio playback failed, falling back to browser TTS')
+              setIsPlayingVoice(null)
+              // Fallback to browser TTS
+              const utterance = new SpeechSynthesisUtterance(text)
+              setupVoiceUtterance(utterance, voice)
+            }
+            
+            await audio.play()
+            // eslint-disable-next-line no-console
+            console.log('🔊 Playing OnZoe AI voice:', voice)
+            return // Success - exit early
+          } else {
+            // eslint-disable-next-line no-console
+            console.log('⚠️ OnZoe voice synthesis failed, using browser TTS fallback')
+          }
+        }
+      } catch {
+        // eslint-disable-next-line no-console
+        console.log('⚠️ OnZoe API not available, using browser TTS fallback')
+      }
+
+      // Use browser's Speech Synthesis API for immediate feedback
+      const utterance = new SpeechSynthesisUtterance(text)
+      
+      // Wait for voices to be loaded
+      if (speechSynthesis.getVoices().length === 0) {
+        speechSynthesis.addEventListener('voiceschanged', () => {
+          setupVoiceUtterance(utterance, voice)
+        }, { once: true })
+      } else {
+        setupVoiceUtterance(utterance, voice)
+      }
+      
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Voice preview failed:', error)
+      setIsPlayingVoice(null)
+    }
   }
 
   const adminSections = [

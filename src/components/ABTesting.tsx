@@ -6,48 +6,53 @@ interface ABTestingProps {
   apiKey?: string
 }
 
+interface Campaign {
+  id: string
+  [key: string]: unknown
+}
+
 const ABTesting: React.FC<ABTestingProps> = ({ 
   apiKey = 'demo-api-key-123456789abcdef' 
 }) => {
   const [isInitialized, setIsInitialized] = useState(false)
-  const [campaigns, setCampaigns] = useState<any[]>([])
-  const [assignedVariants, setAssignedVariants] = useState<{[key: string]: any}>({})
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
 
   useEffect(() => {
-    initializeABTesting()
-  }, [])
-
-  const initializeABTesting = async () => {
-    try {
-      // Load the A/B testing script dynamically
-      const script = document.createElement('script')
-      script.src = `http://localhost:4000/ab-script/${apiKey}`
-      script.async = true
-      script.onload = () => {
-        setIsInitialized(true)
-        // Give the script a moment to initialize
-        setTimeout(() => {
-          if (window.ConsltrAB) {
-            // Track page view for A/B testing
-            window.ConsltrAB.trackEvent('portfolio_view', 'acquisition', {
-              page: 'portfolio',
-              timestamp: new Date().toISOString()
-            })
-          }
-        }, 1000)
+    const initializeABTesting = async () => {
+      try {
+        // Load the A/B testing script dynamically
+        const script = document.createElement('script')
+        script.src = `http://localhost:4000/ab-script/${apiKey}`
+        script.async = true
+        script.onload = () => {
+          setIsInitialized(true)
+          // Give the script a moment to initialize
+          setTimeout(() => {
+            if (window.ConsltrAB) {
+              // Track page view for A/B testing
+              window.ConsltrAB.trackEvent('portfolio_view', 'acquisition', {
+                page: 'portfolio',
+                timestamp: new Date().toISOString()
+              })
+            }
+          }, 1000)
+        }
+        document.head.appendChild(script)
+  
+        // Fetch campaign information for display
+        const response = await fetch(`http://localhost:4000/api/public/ab-campaigns?domain=localhost:3002`)
+        const data = await response.json()
+        if (data.campaigns) {
+          setCampaigns(data.campaigns)
+        }
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to initialize A/B testing:', error)
       }
-      document.head.appendChild(script)
-
-      // Fetch campaign information for display
-      const response = await fetch(`http://localhost:4000/api/public/ab-campaigns?domain=localhost:3002`)
-      const data = await response.json()
-      if (data.campaigns) {
-        setCampaigns(data.campaigns)
-      }
-    } catch (error) {
-      console.error('Failed to initialize A/B testing:', error)
     }
-  }
+
+    initializeABTesting()
+  }, [apiKey])
 
   const trackInteraction = (eventName: string, category: string = 'activation') => {
     if (window.ConsltrAB && isInitialized) {
@@ -242,11 +247,11 @@ declare global {
   interface Window {
     ConsltrAB?: {
       init: () => void
-      trackEvent: (eventName: string, category: string, properties?: any) => void
+      trackEvent: (eventName: string, category: string, properties?: Record<string, unknown>) => void
       trackConversion: (value?: number) => void
       trackRevenue: (amount: number) => void
-      assignedVariants: {[key: string]: any}
-      config: any
+      assignedVariants: Record<string, unknown>
+      config: Record<string, unknown>
     }
   }
 }

@@ -1,0 +1,53 @@
+import React, { useState, useEffect } from 'react';
+import Layout from './components/Layout';
+import HomePage from './pages/HomePage';
+import ServicesPage from './pages/ServicesPage';
+import PortfolioPage from './pages/PortfolioPage';
+import ContactPage from './pages/ContactPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import './App.css'; // Assuming you have some global styles
+
+// Router simulation (since react-router-dom isn't available)
+const Router = ({ children }) => {
+  return <div>{children}</div>;
+};
+
+const Route = ({ path, element, exact = false }) => {
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+  
+  const isMatch = exact ? currentPath === path : currentPath.startsWith(path);
+  return isMatch ? element : null;
+};
+
+// Main App Component
+const App = () => {
+  return (
+    <div>
+      <Router>
+        <Layout>
+          <Route path="/" element={<HomePage />} exact />
+          <Route path="/services" element={<ServicesPage />} />
+          <Route path="/portfolio" element={<PortfolioPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+        </Layout>
+      </Router>
+      
+      {/* Font Awesome Icons */}
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    </div>
+  );
+};
+
+export default App;

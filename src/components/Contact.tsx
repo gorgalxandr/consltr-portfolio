@@ -45,8 +45,7 @@ const Contact = () => {
       })
 
       if (response.ok) {
-        const result = await response.json()
-        console.log('Project inquiry submitted successfully:', result)
+        await response.json()
         setIsSubmitted(true)
         
         // Clear form
@@ -66,8 +65,7 @@ const Contact = () => {
         const errorData = await response.json()
         setSubmitError(errorData.message || 'Failed to submit inquiry. Please try again.')
       }
-    } catch (error) {
-      console.error('Error submitting form:', error)
+    } catch {
       setSubmitError('Network error. Please check your connection and try again.')
     } finally {
       setIsSubmitting(false)

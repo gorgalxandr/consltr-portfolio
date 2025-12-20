@@ -1,0 +1,79 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import { visualizer } from 'rollup-plugin-visualizer';
+export default defineConfig({
+    plugins: [
+        react(),
+        tailwindcss(),
+        visualizer({
+            open: false, // Don't auto-open in CI/CD
+            filename: 'bundle-report.html',
+            gzipSize: true,
+        }),
+    ],
+    build: {
+        // Disable source maps for production (better performance)
+        sourcemap: false,
+        // Optimize chunk sizes for CDN caching
+        rollupOptions: {
+            output: {
+                // Split vendor libraries for better caching
+                manualChunks: {
+                    vendor: ['react', 'react-dom'],
+                    router: ['react-router-dom'],
+                    ui: ['@headlessui/react', '@heroicons/react'],
+                    utils: ['axios', 'clsx', 'tailwind-merge']
+                },
+                // Asset file naming for cache busting
+                assetFileNames: (assetInfo) => {
+                    const fileName = assetInfo.names?.[0] || 'asset';
+                    const info = fileName.split('.');
+                    let extType = info[info.length - 1];
+                    if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(extType)) {
+                        extType = 'images';
+                    }
+                    else if (/woff|woff2|eot|ttf|otf/i.test(extType)) {
+                        extType = 'fonts';
+                    }
+                    return `assets/${extType}/[name]-[hash][extname]`;
+                },
+                chunkFileNames: 'assets/js/[name]-[hash].js',
+                entryFileNames: 'assets/js/[name]-[hash].js',
+            }
+        },
+        // Set asset directory structure
+        assetsDir: 'assets',
+        // Warn about large chunks (1.5MB)
+        chunkSizeWarningLimit: 1500,
+        // Target modern browsers for smaller bundles
+        target: 'esnext',
+        // Enable CSS code splitting
+        cssCodeSplit: true,
+        // Minify for production
+        minify: 'terser',
+        terserOptions: {
+            compress: {
+                drop_console: true, // Remove console.log in production
+                drop_debugger: true,
+            },
+        },
+    },
+    // Configure base URL for CDN (can be overridden by environment)
+    base: process.env.CDN_BASE_URL || '/',
+    // Optimize dependencies
+    optimizeDeps: {
+        include: ['react', 'react-dom', 'react-router-dom'],
+    },
+    // Development server configuration
+    server: {
+        port: 5173,
+        host: true, // Allow external connections
+        cors: true,
+    },
+    // Preview server (for testing production builds)
+    preview: {
+        port: 4173,
+        host: true,
+    },
+});

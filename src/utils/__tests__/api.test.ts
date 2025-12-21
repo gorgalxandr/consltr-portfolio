@@ -199,7 +199,7 @@ describe('API Module', () => {
           data: { code: 'EBADCSRFTOKEN' }
         },
         config: {
-          headers: {}
+          headers: {} as Record<string, string>
         }
       };
 
@@ -228,7 +228,7 @@ describe('API Module', () => {
           data: { error: 'CSRF token validation failed' }
         },
         config: {
-          headers: {}
+          headers: {} as Record<string, string>
         }
       };
 
@@ -254,7 +254,7 @@ describe('API Module', () => {
           data: { code: 'EBADCSRFTOKEN' }
         },
         config: {
-          headers: {}
+          headers: {} as Record<string, string>
         }
       };
 

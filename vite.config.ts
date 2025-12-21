@@ -1,15 +1,19 @@
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-export default {
+export default defineConfig({
   plugins: [react()],
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./src/test/setup.ts'],
-    exclude: ['**/node_modules/**', '**/e2e/**'],
+  resolve: {
+    alias: {
+      '@': '/src',
+    },
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
   },
   server: {
     port: 3001,
     host: true
   }
-}
+})

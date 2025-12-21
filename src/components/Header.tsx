@@ -3,7 +3,13 @@ import { motion } from 'framer-motion'
 import { Menu, X, Settings } from 'lucide-react'
 
 interface HeaderProps {
-  onAdminAccess: () => void
+  onAdminAccess?: () => void
+  navigate?: (path: string) => void
+  isAuthenticated?: boolean
+  theme?: any
+  onThemeChange?: (theme: any) => void
+  userInfo?: any
+  logout?: () => Promise<void>
 }
 
 const Header: React.FC<HeaderProps> = ({ onAdminAccess }) => {
@@ -93,7 +99,7 @@ const Header: React.FC<HeaderProps> = ({ onAdminAccess }) => {
               <button
                 onClick={() => {
                   setIsMenuOpen(false)
-                  onAdminAccess()
+                  onAdminAccess?.()
                 }}
                 className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors w-fit"
               >

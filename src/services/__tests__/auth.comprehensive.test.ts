@@ -12,7 +12,7 @@ vi.mock('../../utils/api', () => ({
   }
 }));
 
-const mockApi = api as {
+const mockApi = api as unknown as {
   post: Mock;
   get: Mock;
   put: Mock;

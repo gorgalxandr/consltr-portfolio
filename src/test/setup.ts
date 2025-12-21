@@ -4,15 +4,21 @@ import { vi } from 'vitest'
 process.env.NODE_ENV = 'development'
 
 // Mock IntersectionObserver
-global.IntersectionObserver = class IntersectionObserver {
+class MockIntersectionObserver implements IntersectionObserver {
+  readonly root: Element | null = null;
+  readonly rootMargin: string = '';
+  readonly thresholds: ReadonlyArray<number> = [];
+
   constructor() {}
   disconnect() {}
   observe() {}
   unobserve() {}
-  takeRecords() {
+  takeRecords(): IntersectionObserverEntry[] {
     return []
   }
 }
+
+global.IntersectionObserver = MockIntersectionObserver as any;
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {

@@ -1,11 +1,17 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest'
 import axios from 'axios'
 import { getCSRFToken, resetCSRFToken } from '../csrfToken'
 
 // Mock axios
-vi.mock('axios')
+vi.mock('axios', () => ({
+  default: {
+    get: vi.fn()
+  }
+}))
 
-const mockAxios = vi.mocked(axios)
+const mockAxios = axios as unknown as {
+  get: Mock
+}
 
 describe('CSRF Token Utilities', () => {
   beforeEach(() => {
